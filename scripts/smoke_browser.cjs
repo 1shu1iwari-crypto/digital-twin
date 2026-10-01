@@ -38,9 +38,14 @@ const path = require('node:path');
   await page.getByRole('tab',{name:'Overview',exact:true}).click();
   const before=await (await page.request.get(`${base}/api/patients/HF-0004/timeline`)).json();
   await page.getByRole('button',{name:'Explore a scenario'}).click();
+  await page.keyboard.press('Shift+Tab');
+  assert.equal(await page.evaluate(()=>document.activeElement?.textContent?.trim()),'Recompute scenario');
+  await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(()=>document.activeElement?.getAttribute('aria-label')),'Close dialog');
   await page.getByRole('slider',{name:'Weight change',exact:true}).fill('1');
   await page.getByRole('button',{name:'Recompute scenario'}).click();
   await page.getByRole('status').filter({hasText:'Scenario recomputed.'}).waitFor();
+  await page.screenshot({path:path.join('test-results','scenario-desktop.png'),fullPage:true});
   assert.deepEqual(await (await page.request.get(`${base}/api/patients/HF-0004/timeline`)).json(),before);
   await page.keyboard.press('Escape');
   assert.equal(await page.getByRole('dialog').count(),0);
@@ -61,7 +66,8 @@ const path = require('node:path');
   assert.equal(await page.locator('.evaluation-table tbody tr').count(),6);
   await page.screenshot({path:path.join('test-results','evaluation-desktop.png'),fullPage:true});
   await page.getByRole('button',{name:'Research & methods',exact:true}).click();
-  await page.getByRole('heading',{name:'Learn the baseline.',exact:false}).waitFor();
+  await page.getByRole('heading',{name:'Understand an ordinary day.',exact:false}).waitFor();
+  await page.screenshot({path:path.join('test-results','research-desktop.png'),fullPage:true});
   await page.setViewportSize({width:390,height:844});
   await page.getByRole('button',{name:'Patient overview',exact:true}).click();
   await page.screenshot({path:path.join('test-results','overview-mobile.png'),fullPage:true});
@@ -70,7 +76,25 @@ const path = require('node:path');
   await page.getByRole('heading',{name:'Digital twin state'}).waitFor();
   await page.screenshot({path:path.join('test-results','patient-mobile.png'),fullPage:true});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
+  await page.getByRole('button',{name:'Explore a scenario'}).click();
+  await page.waitForTimeout(300);
+  await page.screenshot({path:path.join('test-results','scenario-mobile.png'),fullPage:true});
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
+  await page.keyboard.press('Escape');
+  for (const width of [360,768,1024,1440]) {
+    await page.setViewportSize({width,height:960});
+    for (const label of ['Patient overview','Digital twin','Model performance','Research & methods']) {
+      await page.getByRole('button',{name:label,exact:true}).click();
+      assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),`${label} overflows at ${width}px`);
+      if(label==='Digital twin') {
+        for(const tab of ['Explainability','EHR profile','Data timeline','Overview']) {
+          await page.getByRole('tab',{name:tab,exact:true}).click();
+          assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),`${tab} overflows at ${width}px`);
+        }
+      }
+    }
+  }
   assert.deepEqual(errors,[]);
   await browser.close();
-  console.log('Browser smoke passed: search, filter, patient tabs, scenario, ingestion, replay, evaluation, research, desktop/mobile layout; zero JS errors.');
+  console.log('Browser smoke passed: search, filter, patient tabs, scenario, ingestion, replay, evaluation, research, 360–1440px layouts, drawer focus trap; zero JS errors.');
 })().catch(error=>{console.error(error);process.exit(1)});
