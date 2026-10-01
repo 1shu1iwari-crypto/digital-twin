@@ -1,0 +1,18 @@
+services:
+  cardiotwin:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - demo-data:/app/data
+      - model-artifacts:/app/artifacts
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 300s
+
+volumes:
+  demo-data:
+  model-artifacts:
