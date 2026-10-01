@@ -1,0 +1,26 @@
+# Every number here is an engineering assumption, not a medical threshold.
+seed: 2026
+patients: 800
+days: 60
+baseline_days: 14
+minimum_baseline_observations: 7
+prediction_horizon: 7
+event_fraction: 0.38
+hard_negative_fraction: 0.35
+missing_fraction: 0.06
+artifact_fraction: 0.015
+event_day_range: [34, 60]
+onset_days_range: [7, 15]
+thresholds:
+  watch: 0.2
+  high: 0.6
+signals:
+  resting_hr: {unit: bpm, baseline: [58, 84], noise: 2.3, scale_floor: 2.0, deterioration: [6, 21], bounds: [35, 160]}
+  hrv: {unit: ms, baseline: [20, 65], noise: 3.0, scale_floor: 3.0, deterioration: [-25, -8], bounds: [5, 140]}
+  respiratory_rate: {unit: /min, baseline: [13, 20], noise: 0.8, scale_floor: 0.8, deterioration: [2, 7], bounds: [8, 40]}
+  spo2: {unit: '%', baseline: [94, 98], noise: 0.45, scale_floor: 0.5, deterioration: [-4, -0.8], bounds: [80, 100]}
+  steps: {unit: steps, baseline: [2600, 8200], noise: 650, scale_floor: 500, deterioration: [-4200, -1400], bounds: [100, 20000]}
+  weight: {unit: kg, baseline: [52, 105], noise: 0.25, scale_floor: 0.25, deterioration: [1.0, 3.8], bounds: [35, 160]}
+  systolic_bp: {unit: mmHg, baseline: [103, 150], noise: 4.0, scale_floor: 4.0, deterioration: [-15, 12], bounds: [70, 210]}
+  diastolic_bp: {unit: mmHg, baseline: [62, 92], noise: 3.0, scale_floor: 3.0, deterioration: [-8, 6], bounds: [40, 130]}
+  sleep_hours: {unit: h, baseline: [5.5, 8.3], noise: 0.5, scale_floor: 0.5, deterioration: [-2, -0.5], bounds: [2, 12]}

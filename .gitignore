@@ -1,0 +1,13 @@
+__pycache__/
+.pytest_cache/
+.venv/
+*.egg-info/
+node_modules/
+frontend/dist/
+data/
+artifacts/*.json
+!artifacts/.gitkeep
+*.sqlite*
+.env
+test-results/
+*.tsbuildinfo
