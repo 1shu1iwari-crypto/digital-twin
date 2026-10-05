@@ -123,7 +123,7 @@ Inputs are exported to `data/synthetic`; outcome metadata stays in a separate CS
 | [Demo guide](docs/demo.md) | Two-minute walkthrough and next milestones |
 | [Wearables](docs/wearables.md) | HealthKit, Health Connect, Google Health and production data-stack architecture |
 
-This is a local research demo without authentication or access controls. The replay/reset endpoints are intended for fictional data in a single workspace. Hospital/device integration, actual clinical data, FHIR ingestion, security controls, externally validated forecasting and mechanistic physiology are future work.
+This is a local research demo without authentication or access controls. The replay/reset endpoints are intended for fictional data in a single workspace. Wearable source contracts and normalization are now scaffolded, but native device authorization, actual clinical data, production FHIR exchange, security controls, externally validated forecasting and mechanistic physiology remain future work.
 
 
 ## Production-shaped data stack
