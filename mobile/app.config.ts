@@ -12,7 +12,6 @@ const config: ExpoConfig = {
   newArchEnabled: true,
   ios: {
     bundleIdentifier: 'health.cardiotwin.companion',
-    deploymentTarget: '16.4',
     supportsTablet: false,
     infoPlist: allowDevHttp
       ? {
