@@ -13,39 +13,33 @@ export type DailyReading = {
   metric: CanonicalMetric
   value: number
   unit?: string
+  sourceMetric?: string
 }
 
 export type DailySummary = {
-  source: 'apple_health' | 'health_connect' | 'samsung_health' | 'google_health' | 'garmin' | 'oura'
+  source: 'apple_health' | 'health_connect'
   timestamp: string
   readings: DailyReading[]
 }
 
-export interface HealthAdapter {
-  source: DailySummary['source']
-  requestPermissions(): Promise<boolean>
-  readDailySummary(day: string): Promise<DailySummary>
+export type HealthAvailability = {
+  available: boolean
+  label: string
+  detail: string
+  action?: 'install' | 'settings'
 }
 
-export async function syncDailySummary(
-  apiBase: string,
-  patientId: string,
-  adapter: HealthAdapter,
-  day: string,
-) {
-  const allowed = await adapter.requestPermissions()
-  if (!allowed) throw new Error('Health data permission was not granted')
+export type PermissionResult = {
+  requested: boolean
+  detail: string
+}
 
-  const summary = await adapter.readDailySummary(day)
-  const response = await fetch(
-    `${apiBase}/api/patients/${encodeURIComponent(patientId)}/wearables/ingest`,
-    {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(summary),
-    },
-  )
-  const body = await response.json()
-  if (!response.ok) throw new Error(body.detail || 'Wearable sync failed')
-  return body
+export interface HealthAdapter {
+  source: DailySummary['source']
+  displayName: string
+  hrvLabel: string
+  checkAvailability(): Promise<HealthAvailability>
+  requestPermissions(): Promise<PermissionResult>
+  readDailySummary(day: string): Promise<DailySummary>
+  openSettings(): Promise<void>
 }
