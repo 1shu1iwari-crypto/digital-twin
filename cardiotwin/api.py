@@ -14,6 +14,7 @@ from .config import ARTIFACTS, ROOT, load_config
 from .model import RiskModel
 from .store import Store
 from .twin import snapshot
+from .wearables import normalize_daily, source_catalog, validate_source
 
 class Telemetry(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
@@ -33,6 +34,18 @@ class Telemetry(BaseModel):
         if all(getattr(self, key) is None for key in load_config()["signals"]):
             raise ValueError("At least one sensor reading is required")
         return self
+
+class WearableReading(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    metric: str = Field(min_length=1, max_length=80)
+    value: float
+    unit: str | None = Field(None, max_length=30)
+
+class WearableBatch(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    source: str = Field(min_length=1, max_length=40)
+    timestamp: date
+    readings: list[WearableReading] = Field(min_length=1, max_length=32)
 
 class Scenario(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
@@ -91,6 +104,14 @@ def create_app(db_path=None, model_dir=ARTIFACTS):
     @app.get("/api/health")
     def health():
         return dict(status="ok", model_loaded=True, synthetic=True)
+
+    @app.get("/api/wearables/sources")
+    def wearable_sources():
+        return dict(
+            sources=source_catalog(),
+            architecture="phone/provider -> normalization -> daily telemetry -> twin",
+            note="Native HealthKit and Health Connect permission prompts belong in the mobile companion app."
+        )
 
     @app.get("/api/patients")
     def patients():
@@ -156,6 +177,49 @@ def create_app(db_path=None, model_dir=ARTIFACTS):
         except ValueError as error:
             raise HTTPException(409, str(error))
         return get_twin(pid)
+
+    @app.post("/api/patients/{pid}/wearables/ingest", status_code=201)
+    def wearable_ingest(pid: str, payload: WearableBatch):
+        """Accept one consented daily summary from a supported wearable gateway.
+
+        Raw OAuth tokens and high-frequency streams are intentionally not persisted here.
+        The existing telemetry contract remains the single path into feature generation
+        and inference, so device integrations cannot silently change model semantics.
+        """
+        get_patient(pid)
+        try:
+            source = validate_source(payload.source)
+            normalized = normalize_daily([reading.model_dump() for reading in payload.readings])
+        except (ValueError, TypeError) as error:
+            raise HTTPException(422, str(error)) from error
+
+        try:
+            telemetry_payload = Telemetry(timestamp=payload.timestamp, **normalized)
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from error
+
+        history = app.state.store.history(pid)
+        if len(history) and telemetry_payload.timestamp != date.fromisoformat(str(history.iloc[-1].timestamp)) + timedelta(days=1):
+            raise HTTPException(409, "Wearable sync must append the next calendar day; aggregate gaps as partial daily observations")
+
+        observation = telemetry_payload.model_dump(mode="json")
+        observation.update(
+            patient_id=pid,
+            day=int(history.day.max()) + 1 if len(history) else 1,
+            source=source,
+        )
+        try:
+            app.state.store.append(pid, observation)
+        except ValueError as error:
+            raise HTTPException(409, str(error)) from error
+
+        app.state.cache.clear()
+        return dict(
+            source=source,
+            normalized=normalized,
+            twin=get_twin(pid),
+            privacy="consented daily summary only; provider credentials are not stored by this prototype",
+        )
 
     @app.post("/api/patients/{pid}/simulate")
     def simulate(pid: str, payload: Scenario):

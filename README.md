@@ -15,6 +15,7 @@ A complete local hackathon prototype for personalized, seven-day heart-failure d
 - **Scientific benchmark:** patient-disjoint 70/15/15 split; logistic, EHR-only, wearable-only, combined, no-temporal and full-personalized comparisons; AUC, PR-AUC, Brier, calibration, sensitivity, specificity, event recall, false alerts and lead time.
 - **Scenario explorer:** change one day's weight, pulse, respiration and activity without modifying stored readings.
 - **Backend:** FastAPI, validated telemetry ingestion, fictional patient creation and SQLite persistence.
+- **Wearable gateway:** Apple HealthKit, Android Health Connect/Samsung bridge, Google Health, Garmin and Oura source contracts normalize into the existing daily telemetry model.
 - **Delivery:** tests, CI, Docker configuration, methods, model card and demo script.
 
 ## Run locally
@@ -120,5 +121,17 @@ Inputs are exported to `data/synthetic`; outcome metadata stays in a separate CS
 | [Research](docs/research.md) | Primary papers motivating the design |
 | [Evaluation](docs/evaluation.md) | Measured benchmark and verification record |
 | [Demo guide](docs/demo.md) | Two-minute walkthrough and next milestones |
+| [Wearables](docs/wearables.md) | HealthKit, Health Connect, Google Health and production data-stack architecture |
 
-This is a local research demo without authentication or access controls. The replay/reset endpoints are intended for fictional data in a single workspace. Hospital/device integration, actual clinical data, FHIR ingestion, security controls, externally validated forecasting and mechanistic physiology are future work.
+This is a local research demo without authentication or access controls. The replay/reset endpoints are intended for fictional data in a single workspace. Wearable source contracts and normalization are now scaffolded, but native device authorization, actual clinical data, production FHIR exchange, security controls, externally validated forecasting and mechanistic physiology remain future work.
+
+
+## Production-shaped data stack
+
+The local demo remains intentionally small and reproducible. For a real wearable deployment, install the optional production dependencies with:
+
+```bash
+python -m pip install -e ".[production]"
+```
+
+The intended path is PostgreSQL + TimescaleDB for normalized time-series data, S3/Cloud Storage + Parquet for raw/history files, Redis for cache/jobs, and FHIR adapters for clinical interoperability. These are architectural extension points; the current demo continues to use SQLite unless you implement and configure those services.
