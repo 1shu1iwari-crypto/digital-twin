@@ -16,6 +16,14 @@ from .config import ARTIFACTS, load_config
 from .features import build_dataset
 from .simulation import generate_cohort, STATIC_FEATURES
 
+XGB_PARAMS = dict(n_estimators=180, max_depth=3, learning_rate=.055, subsample=.85,
+                  colsample_bytree=.8, min_child_weight=12, reg_lambda=3,
+                  objective="binary:logistic", n_jobs=2, tree_method="hist")
+
+def dataset_fingerprint(dataset):
+    """Order-sensitive SHA-256 of every feature/label value, for benchmark provenance only."""
+    return hashlib.sha256(pd.util.hash_pandas_object(dataset, index=False).to_numpy().tobytes()).hexdigest()
+
 def sigmoid(value):
     return 1 / (1 + np.exp(-np.clip(value, -35, 35)))
 
@@ -90,6 +98,7 @@ def train(output=ARTIFACTS, n=None, seed=None):
     report = dict(synthetic=True, clinical_validation=False, seed=cfg["seed"],
                   n_patients=len(patients), n_observations=len(observations), n_samples=len(dataset),
                   positive_fraction=float(dataset.target.mean()),
+                  dataset_sha256=dataset_fingerprint(dataset), xgb_params=dict(XGB_PARAMS),
                   split_counts={k: len(v) for k, v in splits.items()}, models=[])
     for name, (columns, kind) in groups.items():
         print(f"Training {name}...", flush=True)
@@ -99,10 +108,7 @@ def train(output=ARTIFACTS, n=None, seed=None):
             val_margin = model.decision_function(frames["validation"][columns])
             test_margin = model.decision_function(frames["test"][columns])
         else:
-            model = xgb.XGBClassifier(n_estimators=180, max_depth=3, learning_rate=.055,
-                                      subsample=.85, colsample_bytree=.8, min_child_weight=12,
-                                      reg_lambda=3, objective="binary:logistic", n_jobs=2,
-                                      random_state=cfg["seed"], tree_method="hist")
+            model = xgb.XGBClassifier(**XGB_PARAMS, random_state=cfg["seed"])
             model.fit(frames["train"][columns], frames["train"].target)
             val_margin = model.predict(frames["validation"][columns], output_margin=True)
             test_margin = model.predict(frames["test"][columns], output_margin=True)

@@ -1,0 +1,131 @@
+# Independent stress test configuration
+# Evaluates frozen model robustness under out-of-distribution noise, missingness, and physiological variation.
+# Kept strictly separate from config/simulation.yaml to preserve the training config hash.
+
+base_seed: 9026
+patients_per_scenario: 200
+
+scenarios:
+  baseline_reference:
+    description: "Standard distribution test cohort (reference baseline)"
+    noise_multiplier: 1.0
+    missing_fraction: 0.06
+    artifact_fraction: 0.015
+    hard_negative_fraction: 0.35
+    onset_days_range: [7, 15]
+    affected_signal_prob: 0.85
+    sensor_dropout: null
+    drift: null
+    bursty_missing: false
+
+  high_noise:
+    description: "High physiological noise and frequent measurement artifacts (2.5x noise, 4x artifacts)"
+    noise_multiplier: 2.5
+    missing_fraction: 0.08
+    artifact_fraction: 0.06
+    hard_negative_fraction: 0.35
+    onset_days_range: [7, 15]
+    affected_signal_prob: 0.85
+    sensor_dropout: null
+    drift: null
+    bursty_missing: false
+
+  bursty_missingness:
+    description: "Bursty multi-day sensor gaps simulating poor adherence or device charging issues"
+    noise_multiplier: 1.0
+    missing_fraction: 0.28
+    artifact_fraction: 0.015
+    hard_negative_fraction: 0.35
+    onset_days_range: [7, 15]
+    affected_signal_prob: 0.85
+    sensor_dropout: null
+    drift: null
+    bursty_missing: true
+    burst_length: 3
+
+  weight_sensor_dropout:
+    description: "Complete loss of home weight scale telemetry after baseline establishment"
+    noise_multiplier: 1.0
+    missing_fraction: 0.06
+    artifact_fraction: 0.015
+    hard_negative_fraction: 0.35
+    onset_days_range: [7, 15]
+    affected_signal_prob: 0.85
+    sensor_dropout: ["weight"]
+    drift: null
+    bursty_missing: false
+
+  smartwatch_dropout:
+    description: "Loss of wearable telemetry (heart rate, HRV, steps, sleep) after baseline"
+    noise_multiplier: 1.0
+    missing_fraction: 0.06
+    artifact_fraction: 0.015
+    hard_negative_fraction: 0.35
+    onset_days_range: [7, 15]
+    affected_signal_prob: 0.85
+    sensor_dropout: ["resting_hr", "hrv", "steps", "sleep_hours"]
+    drift: null
+    bursty_missing: false
+
+  gradual_sensor_drift:
+    description: "Uncalibrated hardware sensor drift simulating scale or sensor calibration decay"
+    noise_multiplier: 1.0
+    missing_fraction: 0.06
+    artifact_fraction: 0.015
+    hard_negative_fraction: 0.35
+    onset_days_range: [7, 15]
+    affected_signal_prob: 0.85
+    sensor_dropout: null
+    drift:
+      weight: 0.04
+      resting_hr: 0.15
+      systolic_bp: 0.25
+    bursty_missing: false
+
+  acute_rapid_onset:
+    description: "Rapid acute decompensation with short progression window (3-6 days)"
+    noise_multiplier: 1.0
+    missing_fraction: 0.06
+    artifact_fraction: 0.015
+    hard_negative_fraction: 0.35
+    onset_days_range: [3, 6]
+    affected_signal_prob: 0.85
+    sensor_dropout: null
+    drift: null
+    bursty_missing: false
+
+  subacute_protracted_onset:
+    description: "Insidious subacute decompensation with long progression window (16-28 days)"
+    noise_multiplier: 1.0
+    missing_fraction: 0.06
+    artifact_fraction: 0.015
+    hard_negative_fraction: 0.35
+    onset_days_range: [16, 28]
+    affected_signal_prob: 0.85
+    sensor_dropout: null
+    drift: null
+    bursty_missing: false
+
+  isolated_signal_deterioration:
+    description: "Partial physiological manifestation where only 1-2 organ systems show signal"
+    noise_multiplier: 1.0
+    missing_fraction: 0.06
+    artifact_fraction: 0.015
+    hard_negative_fraction: 0.35
+    onset_days_range: [7, 15]
+    affected_signal_prob: 0.30
+    sensor_dropout: null
+    drift: null
+    bursty_missing: false
+
+  hard_negatives_surge:
+    description: "Cohort with 75% hard negatives (intercurrent benign respiratory/activity perturbations)"
+    noise_multiplier: 1.0
+    missing_fraction: 0.06
+    artifact_fraction: 0.02
+    hard_negative_fraction: 0.75
+    onset_days_range: [7, 15]
+    affected_signal_prob: 0.85
+    sensor_dropout: null
+    drift: null
+    bursty_missing: false

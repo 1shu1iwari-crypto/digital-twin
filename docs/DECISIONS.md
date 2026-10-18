@@ -24,6 +24,8 @@ SQLite stores fictional patients and append-only daily observations. Pre-generat
 ## ADR-008: demo delivery
 React/TypeScript/Vite builds static assets served by FastAPI from the same origin. Localhost is the default run binding; Docker publishes only to host loopback. No hosted service is deployed by this implementation. Models use native JSON and are regenerated, rather than committing binary or pickle artifacts.
 
-
 ## ADR-009: wearable gateway
 Treat the phone/provider layer as the wearable boundary. Native HealthKit and Health Connect permissions belong in a mobile companion; the web dashboard does not imitate native authorization. Every wearable adapter normalizes to the existing daily telemetry fields before feature generation. Keep raw high-frequency streams, provider OAuth tokens and vendor-specific fields outside the prototype SQLite ledger. Samsung Health is represented through its Health Connect sharing path. Production persistence may move to PostgreSQL/TimescaleDB plus object storage without changing the model input contract.
+
+## ADR-010: hierarchical EHR fusion and paired benchmark on identical patients
+To overcome modality competition where static clinical features dilute dynamic telemetry splits in naïve concatenation, implement hierarchical late-fusion (combining a static EHR prior with dynamic wearable telemetry) and contextual interaction terms. Benchmark the incremental value over wearable-only models on strictly identical test patients and identical observation rows, reporting paired delta metrics with patient-level bootstrap confidence intervals. Calibration and meta-combiners are fit on validation data only.

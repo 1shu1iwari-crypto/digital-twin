@@ -16,6 +16,14 @@ class Store:
             CREATE TABLE IF NOT EXISTS telemetry (patient_id TEXT, day INTEGER, payload TEXT NOT NULL, PRIMARY KEY(patient_id, day));
             CREATE TABLE IF NOT EXISTS replay (patient_id TEXT, day INTEGER, payload TEXT NOT NULL, PRIMARY KEY(patient_id, day));
             CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS reviews (
+                patient_id TEXT,
+                day INTEGER,
+                state TEXT NOT NULL,
+                note TEXT,
+                updated_at TEXT NOT NULL,
+                PRIMARY KEY(patient_id, day)
+            );
             """)
         if not self.patients():
             self.seed()
@@ -28,7 +36,7 @@ class Store:
         # Independent seed, disjoint from the training, validation and test simulations.
         observations = observations.astype(object).where(pd.notna(observations), None)
         with self.connect() as conn:
-            for table in ["patients", "telemetry", "replay", "settings"]:
+            for table in ["patients", "telemetry", "replay", "settings", "reviews"]:
                 conn.execute(f"DELETE FROM {table}")
             for patient in patients.to_dict("records"):
                 conn.execute("INSERT INTO patients VALUES (?,?)", (patient["patient_id"], json.dumps(patient)))
@@ -62,6 +70,14 @@ class Store:
                 raise ValueError("Telemetry must append exactly the next daily observation")
             conn.execute("INSERT INTO telemetry VALUES (?,?,?)", (pid, observation["day"], json.dumps(observation)))
 
+    def upsert_telemetry(self, pid, day, observation):
+        with self.connect() as conn:
+            conn.execute(
+                "INSERT INTO telemetry (patient_id, day, payload) VALUES (?, ?, ?) "
+                "ON CONFLICT(patient_id, day) DO UPDATE SET payload=excluded.payload",
+                (pid, int(day), json.dumps(observation))
+            )
+
     def advance(self):
         with self.connect() as conn:
             conn.execute("BEGIN IMMEDIATE")
@@ -82,3 +98,37 @@ class Store:
     def replay_day(self):
         with self.connect() as conn:
             return int(conn.execute("SELECT value FROM settings WHERE key='replay_day'").fetchone()[0])
+
+    def set_review(self, pid, day, state, note="", updated_at=None):
+        from datetime import datetime, timezone
+        ts = updated_at or datetime.now(timezone.utc).isoformat()
+        with self.connect() as conn:
+            conn.execute(
+                "INSERT INTO reviews (patient_id, day, state, note, updated_at) VALUES (?, ?, ?, ?, ?) "
+                "ON CONFLICT(patient_id, day) DO UPDATE SET state=excluded.state, note=excluded.note, updated_at=excluded.updated_at",
+                (pid, int(day), str(state), str(note or ""), ts)
+            )
+        return dict(patient_id=pid, day=int(day), state=str(state), note=str(note or ""), updated_at=ts)
+
+    def get_review(self, pid, day=None):
+        with self.connect() as conn:
+            if day is not None:
+                row = conn.execute("SELECT patient_id, day, state, note, updated_at FROM reviews WHERE patient_id=? AND day=?", (pid, int(day))).fetchone()
+            else:
+                row = conn.execute("SELECT patient_id, day, state, note, updated_at FROM reviews WHERE patient_id=? ORDER BY day DESC LIMIT 1", (pid,)).fetchone()
+        if not row:
+            return dict(patient_id=pid, day=day or 0, state="unreviewed", note="", updated_at=None)
+        return dict(patient_id=row[0], day=row[1], state=row[2], note=row[3], updated_at=row[4])
+
+    def all_latest_reviews(self):
+        with self.connect() as conn:
+            rows = conn.execute("""
+                SELECT r1.patient_id, r1.day, r1.state, r1.note, r1.updated_at
+                FROM reviews r1
+                INNER JOIN (
+                    SELECT patient_id, MAX(day) as max_day
+                    FROM reviews
+                    GROUP BY patient_id
+                ) r2 ON r1.patient_id = r2.patient_id AND r1.day = r2.max_day
+            """).fetchall()
+        return {r[0]: dict(patient_id=r[0], day=r[1], state=r[2], note=r[3], updated_at=r[4]) for r in rows}

@@ -112,3 +112,49 @@ def test_reset_returns_deterministic_original_state(client):
     client.post("/api/demo/advance",json={})
     client.post("/api/demo/reset",json={})
     assert client.get("/api/patients").json()==original
+
+def test_review_state_persistence_and_list(client):
+    pid = ready_patient(client)["patient_id"]
+    default_review = client.get(f"/api/patients/{pid}/review").json()
+    assert default_review["state"] == "unreviewed"
+    assert default_review["note"] == ""
+
+    payload = {"state": "monitoring", "note": "Review telemetry trend in 48h"}
+    response = client.post(f"/api/patients/{pid}/review", json=payload)
+    assert response.status_code == 200, response.text
+    saved = response.json()
+    assert saved["state"] == "monitoring"
+    assert saved["note"] == "Review telemetry trend in 48h"
+    assert saved["updated_at"] is not None
+
+    fetched = client.get(f"/api/patients/{pid}/review").json()
+    assert fetched["state"] == "monitoring"
+    assert fetched["note"] == "Review telemetry trend in 48h"
+
+    # Detail includes review
+    detail = client.get(f"/api/patients/{pid}").json()
+    assert detail["review"]["state"] == "monitoring"
+
+    # Population list reflects latest review
+    population = client.get("/api/patients").json()["patients"]
+    matched = next(p for p in population if p["patient_id"] == pid)
+    assert matched["review_state"] == "monitoring"
+    assert matched["review_note"] == "Review telemetry trend in 48h"
+
+    # Validation rejects invalid review states
+    assert client.post(f"/api/patients/{pid}/review", json={"state": "invalid_state", "note": ""}).status_code == 422
+
+def test_timeline_uncertainty_bounds(client):
+    pid = ready_patient(client)["patient_id"]
+    timeline = client.get(f"/api/patients/{pid}/timeline?days=14").json()["observations"]
+    valid_risks = [r for r in timeline if r["risk"] is not None]
+    assert len(valid_risks) > 0
+    for r in valid_risks:
+        assert "risk_lower" in r
+        assert "risk_upper" in r
+        assert r["risk_lower"] is not None
+        assert r["risk_upper"] is not None
+        assert r["risk_lower"] <= r["risk"] + 1e-4
+        assert r["risk"] - 1e-4 <= r["risk_upper"]
+        assert 0.0 <= r["risk_lower"] <= 1.0
+        assert 0.0 <= r["risk_upper"] <= 1.0

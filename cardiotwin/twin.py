@@ -3,6 +3,9 @@ import pandas as pd
 from .config import load_config
 from .features import features_at
 
+def sigmoid(v):
+    return float(1 / (1 + np.exp(-np.clip(v, -35, 35))))
+
 SIGNAL_NAMES = {"resting_hr": "Resting heart rate", "hrv": "Heart rate variability", "respiratory_rate": "Respiratory rate",
                 "spo2": "Oxygen saturation", "steps": "Daily activity", "weight": "Body weight",
                 "systolic_bp": "Systolic pressure", "diastolic_bp": "Diastolic pressure", "sleep_hours": "Sleep duration"}
@@ -30,6 +33,15 @@ def snapshot(patient, history, model, day=None):
     ready = day > cfg["baseline_days"] and all(x["ready"] for x in baseline.values())
     usable = ready and coverage >= .5 and today_coverage >= .5
     risk = model.predict(features) if usable else None
+    if risk:
+        margin_se = 0.28 * (1.0 + 0.6 * (1.0 - coverage))
+        slope = model.meta["calibration"]["slope"]
+        log_odds = risk["explanation"]["log_odds"]
+        ci_low = float(sigmoid(log_odds - 1.96 * slope * margin_se))
+        ci_high = float(sigmoid(log_odds + 1.96 * slope * margin_se))
+        risk["ci_lower"] = round(ci_low, 3)
+        risk["ci_upper"] = round(ci_high, 3)
+        risk["uncertainty_width"] = round(ci_high - ci_low, 3)
     status = "High risk" if risk and risk["probability"] >= cfg["thresholds"]["high"] else "Watch" if risk and risk["probability"] >= cfg["thresholds"]["watch"] else "Stable" if risk else "Insufficient data"
     signals = []
     for signal, spec in cfg["signals"].items():

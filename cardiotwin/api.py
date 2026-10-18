@@ -71,6 +71,16 @@ class Patient(BaseModel):
     ckd: int = Field(ge=0, le=1)
     copd: int = Field(ge=0, le=1)
 
+from .ingestion import ingest_telemetry_batch, generate_companion_summary
+
+class ReviewPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    state: str = Field(pattern=r"^(reviewed|needs_follow_up|monitoring|flagged|unreviewed)$")
+    note: str = Field("", max_length=500)
+
+class TelemetryBatchPayload(BaseModel):
+    items: list[dict] = Field(min_length=1)
+
 def create_app(db_path=None, model_dir=ARTIFACTS):
     @asynccontextmanager
     async def lifespan(app):
@@ -116,10 +126,16 @@ def create_app(db_path=None, model_dir=ARTIFACTS):
     @app.get("/api/patients")
     def patients():
         records = []
+        reviews = app.state.store.all_latest_reviews()
         for patient in app.state.store.patients():
-            twin = get_twin(patient["patient_id"])
+            pid = patient["patient_id"]
+            twin = get_twin(pid)
+            rev = reviews.get(pid, {"state": "unreviewed", "note": "", "updated_at": None})
             records.append({**patient, "risk": twin["risk"]["probability"] if twin["risk"] else None,
-                            "status": twin["status"], "coverage": twin["quality"]["coverage"], "timestamp": twin["timestamp"], "last_day": twin["last_day"]})
+                            "status": twin["status"], "coverage": twin["quality"]["coverage"],
+                            "timestamp": twin["timestamp"], "last_day": twin["last_day"],
+                            "review_state": rev["state"], "review_note": rev["note"],
+                            "review_updated_at": rev["updated_at"]})
         records.sort(key=lambda p: p["risk"] if p["risk"] is not None else -1, reverse=True)
         return dict(patients=records, replay_day=app.state.store.replay_day(), synthetic=True)
 
@@ -135,7 +151,19 @@ def create_app(db_path=None, model_dir=ARTIFACTS):
 
     @app.get("/api/patients/{pid}")
     def detail(pid: str):
-        return dict(patient=get_patient(pid), twin=get_twin(pid))
+        return dict(patient=get_patient(pid), twin=get_twin(pid), review=app.state.store.get_review(pid))
+
+    @app.get("/api/patients/{pid}/review")
+    def get_review_endpoint(pid: str):
+        get_patient(pid)
+        return app.state.store.get_review(pid)
+
+    @app.post("/api/patients/{pid}/review")
+    def set_review_endpoint(pid: str, payload: ReviewPayload):
+        get_patient(pid)
+        twin = get_twin(pid)
+        day = twin["last_day"] if twin else 0
+        return app.state.store.set_review(pid, day, payload.state, payload.note)
 
     @app.get("/api/patients/{pid}/twin")
     def twin(pid: str):
@@ -161,7 +189,13 @@ def create_app(db_path=None, model_dir=ARTIFACTS):
                 app.state.cache[key] = snapshot(patient, history, app.state.model, int(row["day"]))
             state = app.state.cache[key]
             clean = {k: None if isinstance(v, float) and not np.isfinite(v) else v for k,v in row.items()}
-            rows.append({**clean, "risk": state["risk"]["probability"] if state["risk"] else None})
+            risk_obj = state["risk"]
+            rows.append({
+                **clean,
+                "risk": risk_obj["probability"] if risk_obj else None,
+                "risk_lower": risk_obj.get("ci_lower") if risk_obj else None,
+                "risk_upper": risk_obj.get("ci_upper") if risk_obj else None,
+            })
         return dict(observations=rows, synthetic=True)
 
     @app.post("/api/patients/{pid}/telemetry", status_code=201)
@@ -221,6 +255,26 @@ def create_app(db_path=None, model_dir=ARTIFACTS):
             privacy="consented daily summary only; provider credentials are not stored by this prototype",
         )
 
+    @app.post("/api/patients/{pid}/telemetry/batch", status_code=200)
+    def telemetry_batch(pid: str, payload: TelemetryBatchPayload):
+        get_patient(pid)
+        try:
+            summary = ingest_telemetry_batch(app.state.store, pid, payload.items, allow_backfill=True)
+        except ValueError as error:
+            raise HTTPException(422, str(error))
+        app.state.cache = {k: v for k, v in app.state.cache.items() if k[0] != pid}
+        twin = get_twin(pid)
+        return dict(summary=summary, twin=twin)
+
+    @app.get("/api/patients/{pid}/companion")
+    def companion(pid: str):
+        patient = get_patient(pid)
+        history = app.state.store.history(pid)
+        review = app.state.store.get_review(pid)
+        current_day = int(history.day.max()) if len(history) else 0
+        return generate_companion_summary(patient, history, app.state.model, current_day, review)
+
+
     @app.post("/api/patients/{pid}/simulate")
     def simulate(pid: str, payload: Scenario):
         patient = get_patient(pid)
@@ -260,6 +314,27 @@ def create_app(db_path=None, model_dir=ARTIFACTS):
     @app.get("/api/evaluation")
     def evaluation():
         return json.loads((Path(model_dir)/"evaluation.json").read_text())
+
+    @app.get("/api/evaluation/stress")
+    def stress_evaluation():
+        stress_path = Path(model_dir) / "stress_evaluation.json"
+        if not stress_path.exists():
+            raise HTTPException(404, "Stress evaluation not generated yet. Run python -m scripts.run_stress_tests")
+        return json.loads(stress_path.read_text())
+
+    @app.get("/api/evaluation/fusion")
+    def fusion_evaluation():
+        fusion_path = Path(model_dir) / "fusion_benchmark.json"
+        if not fusion_path.exists():
+            raise HTTPException(404, "Fusion benchmark not generated yet. Run python -m scripts.benchmark_fusion")
+        return json.loads(fusion_path.read_text())
+
+    @app.get("/api/evaluation/clinical")
+    def clinical_evaluation():
+        clinical_path = Path(model_dir) / "clinical_evaluation.json"
+        if not clinical_path.exists():
+            raise HTTPException(404, "Clinical evaluation not generated yet. Run python -m scripts.run_clinical_eval")
+        return json.loads(clinical_path.read_text())
 
     dist = ROOT / "frontend/dist"
     if dist.exists():

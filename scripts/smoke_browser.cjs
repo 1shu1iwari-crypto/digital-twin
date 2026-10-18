@@ -4,15 +4,22 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 
 (async () => {
-  const browser = await chromium.launch({headless:true,executablePath:process.env.CARDIOTWIN_BROWSER_EXECUTABLE || undefined,args:['--no-sandbox','--disable-dev-shm-usage']});
+  const browser = await chromium.launch({
+    headless: true,
+    executablePath: process.env.CARDIOTWIN_BROWSER_EXECUTABLE || undefined,
+    args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+  });
   const page = await browser.newPage({viewport:{width:1440,height:1100}});
+  page.setDefaultTimeout(60000);
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   const base='http://127.0.0.1:8011';
-  await page.goto(base);
+  await page.goto(base, {waitUntil: 'networkidle'});
+  await page.evaluate(() => document.fonts.ready);
   await page.getByRole('heading',{name:'Patient priority queue',exact:false}).waitFor();
   await page.locator('.featured-risk').waitFor();
-  await page.screenshot({path:path.join('test-results','overview-desktop.png'),fullPage:true});
+  const snap = (name) => page.screenshot({path:path.join('test-results',name),fullPage:true,animations:'disabled',timeout:60000});
+  await snap('overview-desktop.png');
   assert.equal(await page.locator('.patient-table tbody tr').count(),32);
   await page.getByRole('button',{name:'Explore digital twin',exact:true}).click();
   await page.getByRole('heading',{name:'Digital twin state'}).waitFor();
@@ -28,7 +35,7 @@ const path = require('node:path');
   await page.getByRole('combobox',{name:'Filter risk category'}).selectOption('All patients');
   await page.getByRole('button',{name:'Open HF-0004 twin',exact:true}).click();
   await page.getByRole('heading',{name:'Digital twin state'}).waitFor();
-  await page.screenshot({path:path.join('test-results','patient-desktop.png'),fullPage:true});
+  await snap('patient-desktop.png');
   await page.getByRole('tab',{name:'Explainability',exact:true}).click();
   await page.getByRole('heading',{name:'A traceable estimate.'}).waitFor();
   await page.getByRole('tab',{name:'EHR profile',exact:true}).click();
@@ -45,7 +52,7 @@ const path = require('node:path');
   await page.getByRole('slider',{name:'Weight change',exact:true}).fill('1');
   await page.getByRole('button',{name:'Recompute scenario'}).click();
   await page.getByRole('status').filter({hasText:'Scenario recomputed.'}).waitFor();
-  await page.screenshot({path:path.join('test-results','scenario-desktop.png'),fullPage:true});
+  await snap('scenario-desktop.png');
   assert.deepEqual(await (await page.request.get(`${base}/api/patients/HF-0004/timeline`)).json(),before);
   await page.keyboard.press('Escape');
   assert.equal(await page.getByRole('dialog').count(),0);
@@ -64,21 +71,21 @@ const path = require('node:path');
   await page.getByRole('button',{name:'Model performance',exact:true}).click();
   await page.getByRole('heading',{name:'What does personalization add?'}).waitFor();
   assert.equal(await page.locator('.evaluation-table tbody tr').count(),6);
-  await page.screenshot({path:path.join('test-results','evaluation-desktop.png'),fullPage:true});
+  await snap('evaluation-desktop.png');
   await page.getByRole('button',{name:'Research & methods',exact:true}).click();
   await page.getByRole('heading',{name:'Understand an ordinary day.',exact:false}).waitFor();
-  await page.screenshot({path:path.join('test-results','research-desktop.png'),fullPage:true});
+  await snap('research-desktop.png');
   await page.setViewportSize({width:390,height:844});
   await page.getByRole('button',{name:'Patient overview',exact:true}).click();
-  await page.screenshot({path:path.join('test-results','overview-mobile.png'),fullPage:true});
+  await snap('overview-mobile.png');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
   await page.getByRole('button',{name:'Digital twin',exact:true}).click();
   await page.getByRole('heading',{name:'Digital twin state'}).waitFor();
-  await page.screenshot({path:path.join('test-results','patient-mobile.png'),fullPage:true});
+  await snap('patient-mobile.png');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
   await page.getByRole('button',{name:'Explore a scenario'}).click();
   await page.waitForTimeout(300);
-  await page.screenshot({path:path.join('test-results','scenario-mobile.png'),fullPage:true});
+  await snap('scenario-mobile.png');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
   await page.keyboard.press('Escape');
   for (const width of [360,768,1024,1440]) {
