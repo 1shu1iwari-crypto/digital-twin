@@ -35,8 +35,8 @@ strong, b, .table-risk, .index, .signal-card { font-variant-numeric: tabular-num
 .logo>svg { width: 34px; height: 34px; }
 .logo>div { color: var(--ink); padding-top: 4px; }
 .logo-hf { font-family: 'DM Sans Variable', sans-serif; font-size: 13px; color: #70685d; letter-spacing: -.3px; }
-.site-header nav { display: flex; align-items: stretch; gap: 30px; align-self: stretch; justify-content: center; }
-.nav-item { min-height: 44px; position: relative; padding: 2px 0 0; white-space: nowrap; font-size: 13px; color: var(--muted); font-weight: 450; }
+.site-header nav { display: flex; min-width:0; overflow-x:auto; scrollbar-width:thin; scrollbar-color:#b8b0a3 transparent; align-items: stretch; gap: 30px; align-self: stretch; justify-content: center; }
+.nav-item { flex-shrink:0; min-height: 44px; position: relative; padding: 2px 0 0; white-space: nowrap; font-size: 13px; color: var(--muted); font-weight: 450; }
 .nav-item:hover { color: var(--accent); }
 .nav-item.active { color: var(--ink); font-weight: 600; }
 .nav-item.active::after { content: ''; position: absolute; height: 2px; left: 0; right: 0; bottom: 0; background: var(--accent); }
@@ -431,7 +431,7 @@ select { background: var(--paper); border: 1px solid #d7d0c3; border-radius: 4px
   .logo>svg { height: 29px; width: 29px; }
   .logo-hf { font-size: 12px; }
   .header-meta { font-size: 12px; }
-  .site-header nav { gap: 25px; min-height: 49px; justify-content: space-between; }
+  .site-header nav { gap: 20px; min-height: 49px; justify-content: flex-start; }
   .nav-item { font-size: 12px; }
   .research-banner { font-size: 12px; padding: 16px 0; gap: 6px; }
   .research-banner>a { display: none; }
@@ -573,6 +573,35 @@ select { background: var(--paper); border: 1px solid #d7d0c3; border-radius: 4px
 
 
 /* Wearable connection experience */
+.summary-import { padding:36px 0; border-bottom:1px solid var(--rule); }
+.import-heading { display:flex; justify-content:space-between; gap:20px; align-items:start; margin-bottom:26px; }
+.import-heading h2 { font:400 34px/1.15 'Newsreader Variable',Georgia,serif; }
+.import-heading p,.import-review>p,.import-empty p { margin-top:10px; color:#655f55; font-size:14px; line-height:1.7; max-width:70ch; }
+.import-layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:40px; }
+.import-editor label { font-size:14px; font-weight:600; }
+.import-editor select,.import-editor textarea { display:block; width:100%; border:1px solid #b8b0a3; border-radius:8px; padding:12px; background:#faf8f2; color:#292824; margin-top:10px; }
+.import-editor select { font:inherit; }
+.import-editor textarea { font:13px/1.6 Consolas,monospace; min-height:320px; resize:vertical; tab-size:2; }
+.import-editor-label { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; margin-top:20px; }
+.import-editor-label .button { padding:6px 0; font-size:13px; }
+.import-hint { font-size:13px; line-height:1.7; color:#655f55; margin:10px 0 16px; overflow-wrap:anywhere; }
+.import-review { border-inline-start:1px solid var(--rule); padding-inline-start:40px; min-width:0; }
+.import-review h3 { font:400 28px/1.2 'Newsreader Variable',Georgia,serif; }
+.import-review .error { overflow-wrap:anywhere; }
+.import-empty { padding-top:8px; }
+.normalized-readings { margin:20px 0; font-size:14px; font-variant-numeric:tabular-nums; }
+.normalized-readings>div { display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid var(--rule); }
+.normalized-readings dd { margin:0; white-space:nowrap; font-weight:600; }
+.normalized-readings dd small { font-weight:400; color:#655f55; }
+.import-success { display:flex; gap:12px; align-items:start; color:#2e4e46; font-size:15px; line-height:1.7; }
+.import-success svg { flex:none; margin-top:3px; }
+@media(max-width:760px) {
+  .import-layout { grid-template-columns:1fr; gap:28px; }
+  .import-review { border-inline-start:0; border-top:1px solid var(--rule); padding:24px 0 0; }
+  .import-heading { flex-wrap:wrap; }
+  .import-editor select,.import-editor textarea { font-size:16px; }
+  .import-editor .button,.import-review .button { min-height:44px; white-space:normal; }
+}
 .wearables-page { padding-bottom: 22px; }
 .wearable-hero { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr); gap:56px; align-items:center; padding:34px 0 48px; border-bottom:1px solid var(--rule); }
 .wearable-hero h2 { font-family:'Newsreader Variable',Georgia,serif; font-size:clamp(38px,4vw,58px); line-height:1.02; letter-spacing:-1.7px; font-weight:400; max-width:760px; }

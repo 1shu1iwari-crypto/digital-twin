@@ -7,6 +7,7 @@
 5. Open Explore a scenario. Change weight by +1 kg, pulse by +8 bpm and activity by −25%. Recompute. The estimate may move according to the trained model; no direction is guaranteed and no treatment effect is implied.
 6. Open Model performance. Compare personalized vs combined/no-temporal baselines and inspect calibration. Say explicitly that this measures the simulator, not clinical efficacy.
 7. Show Data timeline or Add daily reading to demonstrate validated input and persistence. Export the synthetic twin JSON if useful.
+8. Open Wearables and load a fictional daily summary. Preview pounds-to-kilograms, sleep-minute-to-hour and oxygen-fraction conversions. Save explicitly, then return to the patient twin to inspect the new ledger day. Native device setup remains separate.
 
 ## Rehearsal notes
 

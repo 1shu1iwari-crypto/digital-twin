@@ -29,7 +29,13 @@ def main():
                     raise RuntimeError("Demo server did not become ready")
                 subprocess.run(["node","scripts/smoke_browser.cjs"],cwd=ROOT,env=env,check=True,timeout=120)
             finally:
-                process.terminate()
+                if os.name == "nt":
+                    # Windows venv Python launches a child interpreter. Stop both
+                    # before TemporaryDirectory removes the open SQLite ledger.
+                    subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+                else:
+                    process.terminate()
                 try:
                     process.wait(timeout=5)
                 except subprocess.TimeoutExpired:

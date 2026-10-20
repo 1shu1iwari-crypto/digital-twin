@@ -62,6 +62,7 @@ export default function App() {
     catch(e){setError((e as Error).message);setPlaying(false)}finally{actionLock.current=false;setBusy(false)}
   },[loadPopulation])
   useEffect(()=>{if(!playing||busy)return;const timer=setTimeout(()=>void advance(),2400);return()=>clearTimeout(timer)},[playing,busy,advance])
+  useEffect(()=>{if(page==='wearables')setPlaying(false)},[page])
   const focus=(pid:string)=>{if(pid!==selected)setDetail(null);setSelected(pid);setPage('patient');setSignal('risk');setTab('Overview')}
   const openModal=(kind:'scenario'|'telemetry'|'reset')=>{
     setPlaying(false);setError('');setModal(kind)
@@ -116,7 +117,7 @@ export default function App() {
           {tab==='Data timeline'&&<section className="card"><div className="card-heading"><div><h2>Daily observation ledger</h2><p>Persisted readings only; withheld replay data is excluded</p></div><button className="button text" onClick={download}><ArrowDownToLine size={15}/>Export JSON</button></div><div className="table-scroll"><table className="patient-table"><thead><tr><th>Date</th><th>Risk</th><th>HR</th><th>HRV</th><th>Weight</th><th>Resp.</th><th>SpO₂</th><th>Steps</th></tr></thead><tbody>{[...rows].reverse().map(row=><tr key={row.day}><td>{row.timestamp}</td><td>{percent(row.risk)}</td>{['resting_hr','hrv','weight','respiratory_rate','spo2','steps'].map(key=><td key={key}>{row[key]??'—'}</td>)}</tr>)}</tbody></table></div></section>}
         </>:<Loading/>)}
 
-        {page==='wearables'&&<WearablesPage patientId={selected}/>}
+        {page==='wearables'&&<WearablesPage patientId={selected} patients={patients} onPatientChange={setSelected} onSaved={loadPopulation}/>}
 
         {page==='evaluation'&&evaluation&&<>
           <div className="stats-grid"><SummaryCard icon={<Users size={20}/>} label="Synthetic patients" number={evaluation.n_patients} detail={`${evaluation.n_samples.toLocaleString()} labeled patient-days`}/><SummaryCard icon={<ShieldCheck size={20}/>} label="Held-out test patients" number={evaluation.split_counts.test} detail="No patient overlaps with training" tone="green"/><SummaryCard icon={<Activity size={20}/>} label="Personalized ROC-AUC" number={model?.roc_auc.toFixed(3)??'—'} detail="Discrimination on synthetic data" tone="coral"/><SummaryCard icon={<FlaskConical size={20}/>} label="Personalized PR-AUC" number={model?.pr_auc.toFixed(3)??'—'} detail={`${percent(evaluation.positive_fraction)} positive patient-days overall`} tone="amber"/></div>

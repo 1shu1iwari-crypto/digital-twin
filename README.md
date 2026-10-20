@@ -15,7 +15,7 @@ A complete local hackathon prototype for personalized, seven-day heart-failure d
 - **Scientific benchmark:** patient-disjoint 70/15/15 split; logistic, EHR-only, wearable-only, combined, no-temporal and full-personalized comparisons; AUC, PR-AUC, Brier, calibration, sensitivity, specificity, event recall, false alerts and lead time.
 - **Scenario explorer:** change one day's weight, pulse, respiration and activity without modifying stored readings.
 - **Backend:** FastAPI, validated telemetry ingestion, fictional patient creation and SQLite persistence.
-- **Wearable gateway:** Apple HealthKit, Android Health Connect/Samsung bridge, Google Health, Garmin and Oura source contracts normalize into the existing daily telemetry model.
+- **Wearable gateway:** Apple HealthKit, Android Health Connect/Samsung bridge, Google Health, Garmin and Oura source contracts normalize into the existing daily telemetry model. The Wearables page previews fictional daily JSON summaries, reports normalized units and missing signals, and saves a validated next-day reading to the selected patient.
 - **Delivery:** tests, CI, Docker configuration, methods, model card and demo script.
 
 ## Run locally
@@ -25,7 +25,6 @@ Install **Python 3.11+** and **Node.js 22+**. In a terminal:
 ```bash
 git clone https://github.com/1shu1iwari-crypto/digital-twin.git
 cd digital-twin
-git checkout feat/cardiotwin-prototype
 python -m venv .venv
 ```
 
@@ -56,7 +55,7 @@ The first run generates 800 fictional patients and trains six benchmark models. 
 
 Open **http://127.0.0.1:8000**. Interactive API documentation is at **http://127.0.0.1:8000/docs**.
 
-After merging the implementation PR, the checkout command above is optional: the code will be on `main`.
+The merged application is on `main`.
 
 ### Docker alternative
 

@@ -31,6 +31,7 @@ This keeps the existing model semantics stable: all device adapters eventually p
 ## Current API
 
 - `GET /api/wearables/sources` returns the supported gateway catalog.
+- `POST /api/patients/{patient_id}/wearables/preview` validates the same daily payload without persisting it. Returns canonical values and units, missing metrics, supplied-signal coverage, patient/date/day, and `persisted: false`.
 - `POST /api/patients/{patient_id}/wearables/ingest` accepts one daily summary.
 - Provider credentials and OAuth refresh tokens are deliberately outside the prototype database.
 - High-frequency ECG/PPG/accelerometer streams should not be posted directly to this endpoint. Aggregate them on-device or through a dedicated stream processor first.
@@ -49,6 +50,16 @@ Example:
   ]
 }
 ```
+
+## Dashboard import
+
+Open Wearables, select a fictional patient, and choose **Load fictional example**. The example uses the patient's next calendar date and nine explicitly fictional measurements; it does not copy or simulate a device connection. Edit the JSON as needed, then choose **Preview summary** to inspect normalized values. Only **Save summary & update twin** writes to the daily ledger and refreshes the patient data.
+
+Editing the summary or changing patients invalidates the preview. Both preview and save validate the source, signals, units, bounds, and next-day timestamp. Save validates again so a replay or another append after preview produces a date conflict instead of replacing a reading. Opening Wearables pauses automatic replay. Duplicate saves return 409; they never overwrite the ledger. Missing metrics remain missing and inference may abstain. The source identifier is retained with the daily observation.
+
+Supported units are bpm for pulse, ms for HRV, /min or breaths/min for respiration, steps, kg or lb/lbs/pound/pounds for weight, mmHg for pressure, and h/hours or min/minute/minutes for sleep. Oxygen accepts percent (`%`) or explicit `ratio`/`fraction` values between 0 and 1. Omitted units retain the gateway's defaults, including fraction detection for oxygen and minutes for `sleep_minutes`. Explicit unsupported units are rejected instead of being interpreted as canonical values. Multiple aliases for the same signal retain the existing last-value-wins rule.
+
+The import is a local synthetic-data testing workflow. Native permissions, provider authentication, and actual device synchronization still require the mobile companion.
 
 ## Storage path
 

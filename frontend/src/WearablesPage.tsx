@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Activity, ArrowRight, Info, ShieldCheck, Wifi } from './icons'
+import type { Patient } from './types'
+import WearableImport from './WearableImport'
 
 type Source = {
   id:string
@@ -11,7 +13,7 @@ type Source = {
   metrics:string[]
 }
 
-export default function WearablesPage({patientId}:{patientId:string}) {
+export default function WearablesPage({patientId,patients,onPatientChange,onSaved}:{patientId:string;patients:Patient[];onPatientChange:(id:string)=>void;onSaved:()=>Promise<void>}) {
   const [sources,setSources]=useState<Source[]>([])
   const [error,setError]=useState('')
   useEffect(()=>{
@@ -60,6 +62,8 @@ export default function WearablesPage({patientId}:{patientId:string}) {
       <ArrowRight size={18}/>
       <span>04 <b>Twin updates</b></span>
     </section>
+
+    <WearableImport key={patientId} patientId={patientId} patients={patients} onPatientChange={onPatientChange} onSaved={onSaved}/>
 
     <div className="wearable-layout">
       <section>

@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, asdict
 from datetime import date, datetime
 from typing import Iterable
+from math import isfinite
 
 
 @dataclass(frozen=True)
@@ -143,12 +144,30 @@ def normalize_metric(metric: str, value: float, unit: str | None = None) -> tupl
 
     normalized = float(value)
     normalized_unit = (unit or "").strip().lower()
+    accepted_units = {
+        "resting_hr": {"", "bpm"}, "hrv": {"", "ms"},
+        "respiratory_rate": {"", "/min", "breaths/min"},
+        "spo2": {"", "%", "ratio", "fraction"},
+        "steps": {"", "steps"}, "weight": {"", "kg", "lb", "lbs", "pound", "pounds"},
+        "systolic_bp": {"", "mmhg"}, "diastolic_bp": {"", "mmhg"},
+        "sleep_hours": {"", "h", "hours", "min", "minute", "minutes"},
+    }
+    if not isfinite(normalized):
+        raise ValueError(f"{metric} must be a finite number")
+    if normalized_unit not in accepted_units[key]:
+        raise ValueError(f"Unsupported unit '{unit}' for {metric}; use {CANONICAL_UNITS[key]}")
+    if metric.strip().lower() == "sleep_minutes" and normalized_unit not in {"", "min", "minute", "minutes"}:
+        raise ValueError("sleep_minutes requires minutes; use sleep_hours for hours")
 
     if metric.strip().lower() == "sleep_minutes" or (key == "sleep_hours" and normalized_unit in {"min", "minute", "minutes"}):
         normalized /= 60.0
     elif key == "weight" and normalized_unit in {"lb", "lbs", "pound", "pounds"}:
         normalized *= 0.45359237
-    elif key == "spo2" and 0 <= normalized <= 1 and normalized_unit in {"ratio", "fraction", ""}:
+    elif key == "spo2" and normalized_unit in {"ratio", "fraction"}:
+        if not 0 <= normalized <= 1:
+            raise ValueError("Oxygen saturation fractions must be between 0 and 1")
+        normalized *= 100.0
+    elif key == "spo2" and 0 <= normalized <= 1 and normalized_unit == "":
         normalized *= 100.0
 
     return key, round(normalized, 4)
