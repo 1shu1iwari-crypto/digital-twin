@@ -8,6 +8,8 @@ A complete local hackathon prototype for personalized, seven-day heart-failure d
 
 ## What works
 
+- **Member-to-clinician workflow:** patient-bound invitations, selected-signal sharing choices, member forms and daily CSV uploads, validated previews, delivery receipts, clinician correction/acceptance, atomic ledger updates and withdrawal. Start in Wearables; see [the workflow and integration plan](docs/WORKFLOW.md).
+
 - **Clinician dashboard:** risk-sorted population queue, search and filtering, patient details, personal baselines, sensor trends, twin indices, EHR profile, daily ledger and JSON export.
 - **Living demo:** play/pause or advance daily wearable replay; readings, risk, indices and explanations update together.
 - **Personalization:** 14-day frozen median/MAD baselines, 3-/7-day trends, variability and sensor missingness. Inference abstains when baseline or current coverage is inadequate.
@@ -114,6 +116,7 @@ Inputs are exported to `data/synthetic`; outcome metadata stays in a separate CS
 | File | Purpose |
 | --- | --- |
 | [Architecture](docs/architecture.md) | Modules, persistence and API contracts |
+| [Member workflow](docs/WORKFLOW.md) | Member sharing, clinician review, device integration options and delivery plan |
 | [Decisions](docs/DECISIONS.md) | Stable design choices for future changes |
 | [Data dictionary](docs/data_dictionary.md) | Signals, units, labels and provenance |
 | [Model card](docs/model_card.md) | Intended use, calibration, metrics and limits |

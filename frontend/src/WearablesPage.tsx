@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Activity, ArrowRight, Info, ShieldCheck, Wifi } from './icons'
 import type { Patient } from './types'
 import WearableImport from './WearableImport'
+import CareWorkspace from './CareWorkspace'
 
 type Source = {
   id:string
@@ -13,7 +14,7 @@ type Source = {
   metrics:string[]
 }
 
-export default function WearablesPage({patientId,patients,onPatientChange,onSaved}:{patientId:string;patients:Patient[];onPatientChange:(id:string)=>void;onSaved:()=>Promise<void>}) {
+export default function WearablesPage({patientId,patients,onPatientChange,onSaved,onPatientOpen}:{patientId:string;patients:Patient[];onPatientChange:(id:string)=>void;onSaved:()=>Promise<void>;onPatientOpen:(id:string)=>void}) {
   const [sources,setSources]=useState<Source[]>([])
   const [error,setError]=useState('')
   useEffect(()=>{
@@ -31,6 +32,8 @@ export default function WearablesPage({patientId,patients,onPatientChange,onSave
   const optional=sources.filter(source=>!primary.includes(source))
 
   return <div className="wearables-page">
+    <CareWorkspace patients={patients} patientId={patientId} onSaved={onSaved} onPatientOpen={onPatientOpen}/>
+    <details className="integration-guide"><summary>Device integration paths & developer import</summary>
     <section className="wearable-hero">
       <div>
         <span className="eyebrow">YOUR DATA, WITH PERMISSION</span>
@@ -104,5 +107,6 @@ export default function WearablesPage({patientId,patients,onPatientChange,onSave
       <div><span className="eyebrow">OPTIONAL PROVIDERS</span><h2>Ready to grow beyond the phone gateway.</h2></div>
       <div>{optional.map(source=><span key={source.id}><b>{source.label}</b><small>{source.gateway}</small></span>)}</div>
     </section>}
+    </details>
   </div>
 }

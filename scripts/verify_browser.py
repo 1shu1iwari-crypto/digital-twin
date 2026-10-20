@@ -10,7 +10,7 @@ from cardiotwin.config import ROOT
 
 def main():
     (ROOT/"test-results").mkdir(exist_ok=True)
-    with tempfile.TemporaryDirectory() as directory:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as directory:
         env={**os.environ,"CARDIOTWIN_DB":str(Path(directory)/"browser.sqlite")}
         log_path=ROOT/"test-results/server.log"
         with log_path.open("w") as log:
@@ -28,6 +28,7 @@ def main():
                 else:
                     raise RuntimeError("Demo server did not become ready")
                 subprocess.run(["node","scripts/smoke_browser.cjs"],cwd=ROOT,env=env,check=True,timeout=120)
+                subprocess.run(["node","scripts/care_browser.cjs"],cwd=ROOT,env=env,check=True,timeout=120)
             finally:
                 if os.name == "nt":
                     # Windows venv Python launches a child interpreter. Stop both

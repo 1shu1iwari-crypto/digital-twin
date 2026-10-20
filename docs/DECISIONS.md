@@ -27,3 +27,7 @@ React/TypeScript/Vite builds static assets served by FastAPI from the same origi
 
 ## ADR-009: wearable gateway
 Treat the phone/provider layer as the wearable boundary. Native HealthKit and Health Connect permissions belong in a mobile companion; the web dashboard does not imitate native authorization. Every wearable adapter normalizes to the existing daily telemetry fields before feature generation. Keep raw high-frequency streams, provider OAuth tokens and vendor-specific fields outside the prototype SQLite ledger. Samsung Health is represented through its Health Connect sharing path. Production persistence may move to PostgreSQL/TimescaleDB plus object storage without changing the model input contract.
+
+## ADR-010: member sharing and clinician review
+
+Keep member submissions quarantined from inference until clinician acceptance. Bind member sessions through expiring, single-use invitations to exactly one patient; require explicit selected-signal sharing choices. Accepted consecutive daily batches and their review transition commit atomically. Identical submission retries return the existing receipt. Withdrawal blocks further submissions and withdraws pending ones without deleting accepted ledger days. Keep the original synthetic API available for the local research demo; new care-route sessions do not make the full application suitable for real patient data. See docs/WORKFLOW.md for the implemented journey and production integration plan.

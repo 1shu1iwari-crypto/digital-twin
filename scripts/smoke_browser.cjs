@@ -69,6 +69,7 @@ const path = require('node:path');
   await page.getByRole('heading',{name:'Understand an ordinary day.',exact:false}).waitFor();
   await page.screenshot({path:path.join('test-results','research-desktop.png'),fullPage:true});
   await page.getByRole('button',{name:'Wearable connections',exact:true}).click();
+  await page.getByText('Device integration paths & developer import',{exact:true}).click();
   await page.getByRole('heading',{name:'Try a daily summary.'}).waitFor();
   await page.getByLabel('Patient',{exact:true}).selectOption('HF-0004');
   const ledgerBefore=await (await page.request.get(`${base}/api/patients/HF-0004/timeline?days=90`)).json();
