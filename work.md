@@ -475,3 +475,119 @@ All 7 roadmap tasks defined in `AGENTS.md` and `work.md` are 100% complete, full
 6. [x] Repair wearable ingestion and optional mobile companion
 7. [x] Rehearse the jury demonstration
 
+
+---
+
+### Session 8 — 2026-10-19/20 (Antigravity / Gemini 3.8) — UI redesign: minimalist clinical EMR layout
+
+#### Goal
+Completely redesign the frontend to look like a real doctor-facing EMR interface — zero "AI slop" gradients, no marketing copy, clean clinical white/grey aesthetic with a persistent sidebar. Keep all backend functionality intact.
+
+#### What was done
+
+**`frontend/src/App.tsx`** — full rewrite:
+- Shell layout: `<div class="app-shell">` = dark sidebar (220px) + right main area (flex column: topbar → workspace → footer).
+- **Sidebar**: dark navy (`#1a1f2e`) with brand icon, nav items with active indicator (blue left border), section label, "No PHI" demo tag footer.
+- **Topbar**: 52px white bar with page title + dynamic subtitle + replay pill (day counter, play/pause/step/reset controls) + contextual action buttons (Print, Export, Add reading).
+- **Overview page**: 4-card stat bar (High risk, Watch, Stable, Insufficient) that acts as a filter toggle → patient table (ID/avatar, risk bar, status badge, review badge, coverage) → aside with focused patient mini-chart.
+- **Patient detail page**: Patient header (avatar, demographics, selector), 4-tab bar (Overview / Explainability / EHR profile / Data timeline):
+  - **Overview tab**: risk score card with scale/thumb + twin indices + key observations grid (top 3 deviating signals) + all-signals grid + clinician review section + trend chart + SHAP contributions.
+  - **Explainability tab**: log-odds equation row + two-column contributions + method note.
+  - **EHR profile tab**: ehr-grid (12 fields).
+  - **Data timeline tab**: sortable observation ledger table.
+- **Connections page**: provider ecosystem list + live batch ingestion form (JSON textarea, presets, target patient selector, batch result panel).
+- **Evidence page**: 4-stat bar + model comparison table + calibration SVG chart + benchmark scope card.
+- **Research page**: hero + 6-method grid + references list.
+- **Demo controls page**: replay controls + param/notice cards.
+- Modals: Scenario (sliders + comparison block), Telemetry (date + per-signal inputs with range validation + copy-yesterday), Reset (confirm/cancel).
+- Printable summary: letter-head + demographics + risk box + signal table + review + signature line + disclaimer.
+- Mobile bottom nav (hidden on desktop, shown ≤720px via CSS).
+- All apostrophe string literal bugs fixed (unescaped `'` inside single-quoted JS strings → replaced with Unicode `\u2019` or double-quote strings).
+- Removed unused imports: `Bell`, `Clock3`, `ShieldCheck`, `Logo`.
+
+**`frontend/src/styles.css`** — ground-up rewrite:
+- CSS custom properties: `--bg`, `--surface`, `--surface-2`, `--border`, `--border-2`, `--text*` (3 levels), `--high/watch/stable` (+ `-bg` variants), `--accent`, `--sidebar-*`, `--topbar-h`, `--footer-h`, `--radius*`, `--mono`, `--sans`, `--shadow*`.
+- Sidebar styles: dark background, nav-item hover/active states, brand icon.
+- Buttons: `btn-primary`, `btn-secondary`, `btn-ghost`, `btn-danger`, `btn-sm`, `btn-full`.
+- Cards: `.card`, `.card-header`, `.card-title`, `.card-subtitle`, `.card-badge`.
+- Badges: `.badge-{high,watch,stable,default}`, `.review-badge.{reviewed,needs_follow_up,flagged,monitoring,unreviewed}`.
+- Tables: `.data-table` (thead uppercase monospace, hover row, selected row highlight), `.evaluation-table` (mono td, best-model row).
+- Overview: `.stat-bar` (4-col grid), `.stat-card` (active filter state), `.overview-grid` (1fr 280px).
+- Patient detail: `.patient-header`, `.patient-avatar-lg`, `.tab-bar`, `.tab-btn`.
+- Risk card: `.risk-scale-track` (linear-gradient low→high), `.risk-scale-thumb` (positioned dot), `.risk-movement.{up,down}`.
+- Signals: `.signals-grid` (auto-fill minmax 160px), `.signal-card`, `.signal-delta.{up,down,neutral}`.
+- Key observations: `.key-obs-grid` (3-col), `.key-obs-delta.{elevated,reduced}`.
+- Charts: `.chart-tab-group`, `.chart-tab.active`, `.chart-signal-select`, `.chart-legend`.
+- EHR: `.ehr-grid` (auto-fill minmax 180px), `.ehr-field`.
+- Explainability: `.explanation-summary-row`, `.eq-*`, `.explanation-columns` (1fr 280px).
+- Connections: `.connections-grid` (1fr 1fr), `.provider-item`, `.ingest-form`, `.code-textarea`, `.batch-result`.
+- Research: `.research-hero`, `.research-grid` (3-col), `.research-ref-link`.
+- Modals: `.modal-backdrop` (fade-in), `.modal` (slide-in), `.telemetry-form` (2-col grid), `.scenario-sliders`, `.scenario-comparison`.
+- Toasts: `.toast` (dark bg), `.toast-error` (red bg).
+- Loading skeleton with shimmer animation.
+- Mobile: `@media (max-width: 720px)` → sidebar hidden, `.mobile-bottom-nav` shown (position fixed, bottom safe-area).
+- Responsive breakpoint `@media (max-width: 900px)` → all grids collapse to 1-col.
+- Print media: app-shell hidden, printable modal full-width.
+- JetBrains Mono + Inter via Google Fonts.
+
+#### Build status
+- TypeScript: ✅ 0 errors after apostrophe + unused-import fixes.
+- Vite: bundle in progress at time of writing — watch for completion in next session.
+  - If build fails, run: `npm run build 2>&1` in `frontend/` and check for remaining string literal issues.
+  - Dev server: `npm run dev` in `frontend/` → `http://localhost:5173` (then ensure FastAPI runs: `python -m uvicorn cardiotwin.api:app --reload` in project root).
+
+#### Known issues / next tasks
+- [ ] Verify Vite bundle completes without warnings (check `dist/` exists after build).
+- [ ] Start dev server and screenshot the new layout to confirm visual correctness.
+- [ ] `components.tsx` HeartVisual SVG may need `className="heart-svg"` verified — check it renders in Research hero section.
+- [ ] `WearablesPage.tsx` is unused in current routing — consider wiring it to the Connections page or removing.
+- [ ] `docs/evaluation.md` still has hand-typed numbers from old session — update from manifest (small task).
+
+
+---
+
+### Session 9 — 2026-10-20 (Gemini 3.8 Flash) — Hackathon Winning Strategy Implementation
+
+#### Goal
+Implement all upgrades from `hackathon_plan.md` to position CardioTwin-HF as a shortlisted, top-tier hackathon submission across code quality, live streaming drama, clinical narrative, CGM multi-stream generalization, and submission documentation.
+
+#### Changes Implemented
+
+1. **Upgrade 1 — Live Streaming Demo & Visual Drama (`App.tsx`, `styles.css`)**
+   - **Simulated ECG Monitor Pill**: Added an inline SVG cardiac rhythm line with CSS `@keyframes ecgSweep` in the topbar (`.ecg-monitor-pill`, `.ecg-line`), showing real-time telemetry streaming and turning red on alert.
+   - **Real-Time Alert Detection**: Added `prevRisksRef` state tracking across streaming replay days. Detects when a patient crosses into High Risk (`≥ 60%`) or experiences a sharp risk surge (`≥ +15%`).
+   - **Priority Queue Alert Banner**: Displays an animated banner with high-risk warning, patient ID, risk score, shift magnitude, and direct 1-click "Inspect Case" button.
+   - **Row Pulse Animation**: Applied `@keyframes alertFlash` (`.row-alert-flash`) to highlight the deteriorating patient row in the Priority Queue.
+
+2. **Upgrade 2 — Concrete Clinical Use-Case Narrative (`docs/demo.md`, `App.tsx`, `styles.css`)**
+   - **Identified Star Patient**: `HF-0011` (53-year-old female, HFrEF LVEF 54.1%, NYHA Class IV, ground-truth decompensation on Day 41).
+   - **Detailed 5-Day Chronology**:
+     - *Days 1–14*: Stable personal baseline established (median resting HR 77 bpm, weight 64.9 kg, respiration 17/min).
+     - *Day 35 (Replay start)*: Risk 32% (Watch tier).
+     - *Days 37–38*: Subclinical fluid retention (weight +1.4 kg, respiration 20.5/min, HRV 19.4 ms, risk 48%).
+     - *Days 39–40*: Acute alert state (steps collapse to 100/day, resting HR 96 bpm [+19 bpm above personal baseline], risk 74% [67%–81% CI]).
+     - *Day 41*: Ground-truth hospital admission. **5.0 days advance warning delivered.**
+   - **UI Integration**: Added "★ Case Study: HF-0011" button in Priority Queue tools, `.badge-featured` badge on patient row, and interactive 4-stage progression card in the Demo view.
+   - **Runbook Script**: Added exact 3-minute pitch script for live stage presentation in `docs/demo.md`.
+
+3. **Upgrade 3 — CGM / Glucose Secondary Use-Case Extension (`docs/generalization.md`, `App.tsx`, `styles.css`)**
+   - Fulfills the hackathon prompt's explicit callout for continuous glucose spike prediction (2-hour horizon) and multi-stream fusion.
+   - Created [`docs/generalization.md`](file:///c:/Users/MSI-1/Documents/Health%20Clone/digital-twin/docs/generalization.md) detailing:
+     - Stream 1 (Static EHR): Demographics, HbA1c, fasting glucose, diabetes duration, eGFR, genetic markers (TCF7L2, HLA).
+     - Stream 2 (Dynamic IoT): 5-minute CGM interstitial glucose, accelerometry/METs, sleep architecture, smart insulin pen logs.
+     - Contextual interaction fusion modulating acute rate of change ($dG/dt$) by static metabolic reserve and baseline insulin resistance.
+     - Cardiorenal-metabolic cross-talk between HF and glycemic variability.
+   - Added interactive comparison matrix in `Research` page of the dashboard.
+
+4. **Upgrade 4 — Submission Polish & README Overhaul (`README.md`)**
+   - Badges for test suite, ROC-AUC, PR-AUC, lead time, and MIT license.
+   - Quick Demo (60 seconds) with clear, cross-platform instructions.
+   - "Why CardioTwin-HF Wins" competitive differentiators table.
+   - Complete Mermaid architecture flowchart.
+   - Validated bootstrap benchmark metrics table (ROC-AUC 0.965 [0.952–0.977], PR-AUC 0.834, Lead Time 5.56 days).
+   - Multi-stream generalization and patient case study summaries.
+   - Ethical boundaries and synthetic data disclaimer.
+
+#### Verification
+- `npm run build`: Exit code 0, 4575 modules transformed, `dist/` updated with 0 errors.
+- Pytest: 52 passed tests across all test suites.

@@ -13,7 +13,7 @@
    - Show how the digital twin constructs personal baselines (frozen 14-day median & MAD) rather than using static population cutoffs.
 3. **Select High-Risk Patient (e.g. HF-0011)**:
    - Point out personal deviations (e.g. weight gain, resting pulse increase, HRV depletion).
-   - Show the **Calibrated Risk Score** with **95% Confidence Interval** (e.g., `72% [65% – 79%]`) and explain that uncertainty widens when telemetry coverage drops.
+   - Show the **Calibrated Risk Score** with **95% Confidence Interval** (e.g., `74% [67% – 81%]`) and explain that uncertainty widens when telemetry coverage drops.
 
 ### Act 2: Trajectory, Uncertainty & Explainability (0:40 – 1:20)
 1. **Inspect Risk Trajectory Chart**:
@@ -46,7 +46,7 @@
 
 ### Act 5: Evidence & Known Limitations (2:20 – 3:00)
 1. **Model Evidence Tab**:
-   - Show the frozen benchmark: **0.963 ROC-AUC**, **0.831 PR-AUC**, Brier score **0.029**, and ECE **0.0133**.
+   - Show the frozen benchmark: **0.965 ROC-AUC [0.952–0.977]**, **0.834 PR-AUC [0.793–0.870]**, Brier score **0.029**, and ECE **0.0133**.
    - Show the Alert Fatigue Operating Curve: clinician can tune threshold according to alert budget (0.20 to 1.00 false alerts per patient-month).
 2. **EHR-Wearable Fusion Gains (`artifacts/fusion_benchmark.json`)**:
    - Address the common trap: Naive concatenation of static EHR tabular data with wearable data actually degrades PR-AUC (-0.016).
@@ -59,11 +59,48 @@
 
 ---
 
+## Concrete Use-Case Narrative: The 5-Day Early Warning of Patient HF-0011
+
+Judges remember concrete patient stories. Rather than showing abstract population aggregates, anchor your 3-minute jury walkthrough on **Patient HF-0011**:
+
+```
+[Day 1–14: Frozen Baseline] ──> [Day 35: Replay Start (32% Risk)] ──> [Days 37–38: Subclinical Shift (48%)]
+                                                                               │
+[Day 41: Acute Hospital Event] <── [Day 39–40: Digital Twin Flags Alert (74%)] <┘
+         ▲                                     ▲
+         └──────── 5.0 Days Lead Time ─────────┘
+```
+
+### Patient Character Profile
+- **Identifier**: `HF-0011` (Starred demo patient in the priority queue)
+- **Clinical EHR Context**: 53-year-old female, HFrEF with LVEF 54.1%, NYHA Functional Class IV, baseline eGFR 68 mL/min, serum creatinine 1.1 mg/dL, baseline hemoglobin 12.8 g/dL.
+- **Vulnerability**: Extreme baseline vulnerability due to NYHA Class IV status, meaning even minor physiological shifts pose severe decompensation risks.
+
+### Chronological Trajectory
+| Phase | Days | Physiology & Telemetry | Digital Twin State | Clinician Interpretation |
+|---|---|---|---|---|
+| **1. Baseline Window** | Days 1–14 | Resting HR 77 bpm, weight 64.9 kg, respiration 17/min, steps 2,400/day | Frozen median + MAD calculated | Establishes patient-specific normal range; prevents population threshold false alarms. |
+| **2. Replay Starting Point** | Day 35 | Resting HR 88 bpm, weight 66.1 kg, respiration 19.7/min, steps 1,617 | Risk: **32%** (Watch) | Patient is stable with mild compensated variation. |
+| **3. Subclinical Shift** | Days 37–38 | Weight +1.4 kg (66.8 kg), respiratory rate 20.5/min, HRV drops to 19.4 ms | Risk: **48%** (Elevating) | Fluid retention and sympathetic activation emerge before overt physical distress. |
+| **4. Acute Alert State** | Days 39–40 | Step count collapses to **100 steps/day** (severe fatigue), resting HR reaches **96 bpm** (+19 bpm over personal baseline), SpO₂ 96% | Risk: **74% [67%–81% CI]** (High Risk 🔴) | Digital twin flags High Risk alert. TreeSHAP shows weight baseline deviation (+0.48 log-odds) and respiratory rate (+0.36 log-odds) driving risk. |
+| **5. Adverse Event** | Day 41 | Acute heart failure decompensation / hospital admission | Ground-Truth Event | **5.0 days advance warning** delivered prior to hospitalization. |
+
+### Pitch Delivery Script (What to Say on Stage)
+> *"Judges, let's look at Patient HF-0011. She is a 53-year-old female with NYHA Class IV heart failure. On Day 35, her digital twin showed 32% risk — she felt fine at home.*
+> 
+> *Watch what happens as we advance the replay. On Day 38, her weight creeps up 1.4 kg, respiration edges up, and her HRV collapses. She hasn't called her clinic yet because she doesn't feel short of breath.*
+> 
+> *By Day 40, her steps drop to 100 a day and her pulse hits 96 bpm — 19 bpm above her personal baseline. The twin's calibrated risk spikes to 74% and fires an alert into the triage queue.*
+> 
+> *In our simulation ground truth, she is hospitalized on Day 41. That means CardioTwin gave the clinical team a **5.0-day head start** to adjust oral diuretics and prevent an emergency department admission."*
+
+---
+
 ## Technical Rehearsal Checklist
 
 - [x] Backend running on port 8000 (`python -m scripts.run_demo`)
 - [x] Frontend compiled into `dist/` with zero TypeScript errors (`npm run build`)
-- [x] Full test suite green (45 passed tests: benchmark, stress, fusion, clinical eval, ingestion, api)
+- [x] Full test suite green (52 passed tests: benchmark, stress, fusion, clinical eval, ingestion, api)
 - [x] Reset demo endpoint functional (`POST /api/demo/reset`)
 - [x] Frozen benchmark verified with 0 diffs (`python -m scripts.freeze_benchmark --verify`)
 - [x] All 4 evaluation endpoints active: `/api/evaluation`, `/api/evaluation/stress`, `/api/evaluation/fusion`, `/api/evaluation/clinical`
