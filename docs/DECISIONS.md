@@ -29,3 +29,7 @@ Treat the phone/provider layer as the wearable boundary. Native HealthKit and He
 
 ## ADR-010: hierarchical EHR fusion and paired benchmark on identical patients
 To overcome modality competition where static clinical features dilute dynamic telemetry splits in naïve concatenation, implement hierarchical late-fusion (combining a static EHR prior with dynamic wearable telemetry) and contextual interaction terms. Benchmark the incremental value over wearable-only models on strictly identical test patients and identical observation rows, reporting paired delta metrics with patient-level bootstrap confidence intervals. Calibration and meta-combiners are fit on validation data only.
+
+## ADR-011: member sharing and clinician review
+
+Keep member submissions quarantined from inference until clinician acceptance. Bind member sessions through expiring, single-use invitations to exactly one patient; require explicit selected-signal sharing choices. Accepted consecutive daily batches and their review transition commit atomically. Identical submission retries return the existing receipt. Withdrawal blocks further submissions and withdraws pending ones without deleting accepted ledger days. Keep the original synthetic API available for the local research demo; care-route sessions do not make the application suitable for real patient data. See `docs/WORKFLOW.md` for the implemented journey and production integration plan.

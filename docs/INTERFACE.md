@@ -22,3 +22,7 @@ Small screens use stacked sections and an internally scrollable patient table. S
 The production TypeScript/Vite build passes. Real-browser checks cover search, risk filtering, patient tabs, export, scenario non-persistence, reading ingestion, replay, model evidence, research, and drawer keyboard focus. All pages and patient tabs are checked for viewport overflow at 360, 768, 1024, and 1440 pixels. Desktop and mobile screenshots are inspected locally.
 
 This change concerns presentation. Model training, inference, API contracts, synthetic data, and research assumptions are unchanged.
+
+## Member sharing workflow
+
+Wearables now leads with the clinician's invitation and incoming-summary workflow. The member portal opens separately from a scoped invitation, uses plain forms or a daily CSV, and carries sharing choices and delivery status through the whole journey. The old provider catalog and developer JSON import are retained in a collapsed integration guide. The paper palette, Newsreader headings, divided sections and Phosphor icons remain consistent with the existing site. Mobile members get readable inputs and a stacked review; clinicians get enrollment alongside the inbox on wide screens. The end-to-end workflow is documented in WORKFLOW.md.

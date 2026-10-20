@@ -56,8 +56,17 @@ def main():
                 else:
                     raise RuntimeError("Demo server did not become ready")
                 subprocess.run(["node", "scripts/smoke_browser.cjs"], cwd=ROOT, env=env, check=True, timeout=300)
+                subprocess.run(["node", "scripts/care_browser.cjs"], cwd=ROOT, env=env, check=True, timeout=180)
             finally:
-                process.terminate()
+                if os.name == "nt":
+                    subprocess.run(
+                        ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        check=False,
+                    )
+                else:
+                    process.terminate()
                 try:
                     process.wait(timeout=5)
                 except subprocess.TimeoutExpired:

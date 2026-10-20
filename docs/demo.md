@@ -33,6 +33,13 @@
    - Click **Save review note** — persisted directly to SQLite ledger.
 2. **Cohort Priority Queue Filter**:
    - Navigate back to Patient Overview: show the updated review badge (`NEEDS FOLLOW-UP`) in the priority table.
+
+### Act 4: Consent-Gated Wearable Sharing (1:50 – 2:30)
+1. **Open Device Connections** and enter the fictional clinician workspace.
+2. **Create a member invitation** for a fictional patient, then open the one-time member link.
+3. **Choose shared signals** and preview a fictional daily summary. Point out that nothing enters inference before clinician acceptance.
+4. **Accept the summary** in the clinician inbox, then open the patient twin to confirm the consecutive ledger update.
+5. **State the boundary**: this demonstrates workflow and data-contract behavior with synthetic data; it is not a production patient portal or an emergency service.
    - Demonstrate filtering the cohort by review state (`Needs follow-up`, `Reviewed`, `Monitoring`).
 
 ### Act 4: Multi-Sample Wearable Ingestion & Mobile Companion (1:50 – 2:20)

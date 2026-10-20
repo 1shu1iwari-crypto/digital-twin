@@ -24,6 +24,24 @@ class Store:
                 updated_at TEXT NOT NULL,
                 PRIMARY KEY(patient_id, day)
             );
+            CREATE TABLE IF NOT EXISTS care_enrollments (
+                id TEXT PRIMARY KEY, patient_id TEXT NOT NULL, token_hash TEXT UNIQUE NOT NULL,
+                status TEXT NOT NULL, created REAL NOT NULL, expires REAL NOT NULL,
+                consent TEXT, consented REAL, revoked REAL
+            );
+            CREATE TABLE IF NOT EXISTS care_sessions (
+                token_hash TEXT PRIMARY KEY, role TEXT NOT NULL, enrollment_id TEXT, expires REAL NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS care_submissions (
+                id TEXT PRIMARY KEY, enrollment_id TEXT NOT NULL, patient_id TEXT NOT NULL,
+                fingerprint TEXT NOT NULL, status TEXT NOT NULL, payload TEXT NOT NULL,
+                created REAL NOT NULL, reviewed REAL, review_note TEXT,
+                UNIQUE(enrollment_id, fingerprint)
+            );
+            CREATE TABLE IF NOT EXISTS care_audit (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, enrollment_id TEXT NOT NULL,
+                kind TEXT NOT NULL, at REAL NOT NULL, details TEXT NOT NULL
+            );
             """)
         if not self.patients():
             self.seed()
@@ -36,7 +54,10 @@ class Store:
         # Independent seed, disjoint from the training, validation and test simulations.
         observations = observations.astype(object).where(pd.notna(observations), None)
         with self.connect() as conn:
-            for table in ["patients", "telemetry", "replay", "settings", "reviews"]:
+            for table in [
+                "care_sessions", "care_submissions", "care_audit", "care_enrollments",
+                "patients", "telemetry", "replay", "settings", "reviews",
+            ]:
                 conn.execute(f"DELETE FROM {table}")
             for patient in patients.to_dict("records"):
                 conn.execute("INSERT INTO patients VALUES (?,?)", (patient["patient_id"], json.dumps(patient)))
@@ -65,6 +86,7 @@ class Store:
 
     def append(self, pid, observation):
         with self.connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
             previous = conn.execute("SELECT MAX(day) FROM telemetry WHERE patient_id=?", (pid,)).fetchone()[0] or 0
             if observation["day"] != previous+1:
                 raise ValueError("Telemetry must append exactly the next daily observation")

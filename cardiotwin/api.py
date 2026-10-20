@@ -14,7 +14,8 @@ from .config import ARTIFACTS, ROOT, load_config
 from .model import RiskModel
 from .store import Store
 from .twin import snapshot
-from .wearables import normalize_daily, source_catalog, validate_source
+from .wearables import CANONICAL_UNITS, normalize_daily, source_catalog, validate_source
+from .care import install_care
 
 class Telemetry(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
@@ -95,7 +96,16 @@ def create_app(db_path=None, model_dir=ARTIFACTS):
     app = FastAPI(title="CardioTwin-HF", version="0.1.0", lifespan=lifespan,
                   description="Synthetic-data research demonstration. No clinical validation or treatment recommendations.")
     origins = os.environ.get("CARDIOTWIN_CORS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
-    app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
+    app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["GET", "POST"], allow_headers=["Content-Type", "X-CardioTwin-Action"])
+    install_care(app, Telemetry)
+
+    @app.middleware("http")
+    async def care_privacy_headers(request, call_next):
+        response = await call_next(request)
+        if request.url.path.startswith("/api/care"):
+            response.headers["Cache-Control"] = "no-store"
+            response.headers["Referrer-Policy"] = "no-referrer"
+        return response
 
     def get_patient(pid):
         patient = app.state.store.patient(pid)
@@ -212,14 +222,8 @@ def create_app(db_path=None, model_dir=ARTIFACTS):
             raise HTTPException(409, str(error))
         return get_twin(pid)
 
-    @app.post("/api/patients/{pid}/wearables/ingest", status_code=201)
-    def wearable_ingest(pid: str, payload: WearableBatch):
-        """Accept one consented daily summary from a supported wearable gateway.
-
-        Raw OAuth tokens and high-frequency streams are intentionally not persisted here.
-        The existing telemetry contract remains the single path into feature generation
-        and inference, so device integrations cannot silently change model semantics.
-        """
+    def prepare_wearable(pid: str, payload: WearableBatch):
+        """Shared validation for preview and commit; this function never writes."""
         get_patient(pid)
         try:
             source = validate_source(payload.source)
@@ -235,6 +239,25 @@ def create_app(db_path=None, model_dir=ARTIFACTS):
         history = app.state.store.history(pid)
         if len(history) and telemetry_payload.timestamp != date.fromisoformat(str(history.iloc[-1].timestamp)) + timedelta(days=1):
             raise HTTPException(409, "Wearable sync must append the next calendar day; aggregate gaps as partial daily observations")
+
+        return source, normalized, telemetry_payload, history
+
+    @app.post("/api/patients/{pid}/wearables/preview")
+    def wearable_preview(pid: str, payload: WearableBatch):
+        source, normalized, telemetry_payload, history = prepare_wearable(pid, payload)
+        signals = list(load_config()["signals"])
+        return dict(
+            patient_id=pid, source=source, timestamp=telemetry_payload.timestamp.isoformat(),
+            day=int(history.day.max()) + 1 if len(history) else 1,
+            normalized=normalized, units={key: CANONICAL_UNITS[key] for key in normalized},
+            missing_metrics=[key for key in signals if key not in normalized],
+            coverage=len(normalized) / len(signals), persisted=False,
+        )
+
+    @app.post("/api/patients/{pid}/wearables/ingest", status_code=201)
+    def wearable_ingest(pid: str, payload: WearableBatch):
+        """Append one validated daily summary; keep provider credentials outside the ledger."""
+        source, normalized, telemetry_payload, history = prepare_wearable(pid, payload)
 
         observation = telemetry_payload.model_dump(mode="json")
         observation.update(

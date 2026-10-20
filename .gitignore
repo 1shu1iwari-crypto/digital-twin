@@ -11,3 +11,4 @@ artifacts/*.json
 .env
 test-results/
 *.tsbuildinfo
+.task-tmp/

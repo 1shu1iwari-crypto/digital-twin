@@ -13,7 +13,7 @@ const path=require('node:path');
     doctor.on('pageerror',e=>errors.push(e.message));member.on('pageerror',e=>errors.push(e.message));
     const base='http://127.0.0.1:8011';
     await doctor.goto(base);
-    await doctor.getByRole('button',{name:'Wearable connections',exact:true}).click();
+    await doctor.getByRole('button',{name:'Device Connections',exact:true}).first().click();
     await doctor.getByRole('button',{name:'Enter clinician demo',exact:true}).click();
     await doctor.getByLabel('Patient record',{exact:true}).selectOption('HF-0004');
     await doctor.getByRole('button',{name:'Create member invitation',exact:true}).click();

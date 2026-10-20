@@ -1,5 +1,5 @@
 export type CanonicalMetric =
-  | 'heart_rate'
+  | 'resting_heart_rate'
   | 'heart_rate_variability'
   | 'respiratory_rate'
   | 'oxygen_saturation'
@@ -29,7 +29,6 @@ export interface HealthAdapter {
 
 export async function syncDailySummary(
   apiBase: string,
-  patientId: string,
   adapter: HealthAdapter,
   day: string,
 ) {
@@ -38,11 +37,12 @@ export async function syncDailySummary(
 
   const summary = await adapter.readDailySummary(day)
   const response = await fetch(
-    `${apiBase}/api/patients/${encodeURIComponent(patientId)}/wearables/ingest`,
+    `${apiBase}/api/care/member/submissions`,
     {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(summary),
+      credentials: 'include',
+      headers: {'Content-Type': 'application/json', 'X-CardioTwin-Action': '1'},
+      body: JSON.stringify({days: [summary]}),
     },
   )
   const body = await response.json()

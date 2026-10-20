@@ -34,6 +34,14 @@ npm run dev
 3. Click **Play** on the topbar Replay Pill to stream wearable days 36–41 in real-time.
 4. Watch the twin elevate from Stable (32%) to Watch (48%) on Day 38, and fire a **High-Risk Alert (74%)** on Day 40 — **5.0 days before** the simulated hospitalization event!
 
+### 4. Try the Wearable Sharing Workflow
+1. Open **Device Connections** and enter the fictional clinician workspace.
+2. Create a patient-bound invitation, open the member portal, and choose which signals to share.
+3. Preview a fictional daily form or CSV summary before sending it.
+4. Accept the pending summary in the clinician workspace to append it atomically to the patient ledger.
+
+The workflow includes single-use invitations, explicit signal selection, validation, delivery receipts, correction requests, withdrawal, and audit history. See [Member workflow](docs/WORKFLOW.md).
+
 ---
 
 ## Why CardioTwin-HF Wins

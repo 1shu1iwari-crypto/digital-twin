@@ -591,3 +591,26 @@ Implement all upgrades from `hackathon_plan.md` to position CardioTwin-HF as a s
 #### Verification
 - `npm run build`: Exit code 0, 4575 modules transformed, `dist/` updated with 0 errors.
 - Pytest: 52 passed tests across all test suites.
+
+---
+
+### Session 10 — 2026-10-20 — Wearable Branch Merge and UX Hardening
+
+#### Goal
+Merge `origin/wearable` into `main` without regressing the redesigned dashboard, then harden the complete member-to-clinician wearable workflow.
+
+#### Changes Implemented
+- Merged the wearable normalization, preview/ingest API, member invitation and consent flow, clinician review queue, atomic ledger acceptance, withdrawal, audit history, tests, and workflow documentation.
+- Preserved the current EMR-style dashboard and embedded the clinician workspace plus developer import under **Device Connections**.
+- Added a dedicated responsive care UI layer with consistent focus, disabled, loading, success, error, empty, long-content, and mobile states.
+- Kept member and clinician sessions separate; member routes remain isolated behind one-time patient-bound invitations.
+- Combined the existing review ledger and care workflow tables in `Store`, including deterministic reset behavior and transactional telemetry appends.
+- Added a mobile Research destination and consistent accessible navigation labels across desktop and mobile.
+- Updated stale browser selectors to the redesigned UI and extended browser coverage to the wearable sharing and import paths.
+
+#### Verification
+- `npm.cmd run build`: passed; 4,580 modules transformed.
+- Focused API suite: 39 passed.
+- Full pytest suite: 71 passed, 1 upstream Starlette/httpx deprecation warning.
+- Browser smoke: passed search, filters, patient tabs, scenario, ingestion, replay, wearable sharing/import, evidence, research, and 360–1440px layouts with zero JavaScript errors.
+- Care browser: passed separate sessions, one-time invite, selected-signal consent, form/CSV delivery, clinician accept/correction, ledger provenance, receipts, withdrawal, reload, and responsive layouts with zero JavaScript errors.
