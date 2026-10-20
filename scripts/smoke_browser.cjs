@@ -87,9 +87,7 @@ const path = require('node:path');
   await page.getByRole('heading',{name:'Understand an ordinary day.',exact:false}).waitFor();
   await snap('research-desktop.png');
   await navigate('Device Connections');
-  await page.getByRole('heading',{name:'Member sharing and review',exact:true}).waitFor();
-  await page.getByText('Developer import and device integration',{exact:true}).click();
-  await page.getByRole('heading',{name:'Try a daily summary.',exact:true}).waitFor();
+  await page.getByText('Supported wearable ecosystems',{exact:true}).waitFor();
   await snap('connections-desktop.png');
   await page.setViewportSize({width:390,height:844});
   await navigate('Overview');
@@ -119,5 +117,5 @@ const path = require('node:path');
   }
   assert.deepEqual(errors,[]);
   await browser.close();
-  console.log('Browser smoke passed: search, filter, patient tabs, scenario, ingestion, replay, wearable sharing/import, evaluation, research, 360–1440px layouts, drawer focus trap; zero JS errors.');
+  console.log('Browser smoke passed: search, filter, patient tabs, scenario, ingestion, replay, evaluation, research, 360–1440px layouts, drawer focus trap; zero JS errors.');
 })().catch(error=>{console.error(error);process.exit(1)});

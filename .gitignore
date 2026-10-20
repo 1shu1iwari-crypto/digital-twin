@@ -12,3 +12,4 @@ artifacts/*.json
 test-results/
 *.tsbuildinfo
 .task-tmp/
+.vscode/

@@ -56,7 +56,6 @@ def main():
                 else:
                     raise RuntimeError("Demo server did not become ready")
                 subprocess.run(["node", "scripts/smoke_browser.cjs"], cwd=ROOT, env=env, check=True, timeout=300)
-                subprocess.run(["node", "scripts/care_browser.cjs"], cwd=ROOT, env=env, check=True, timeout=180)
             finally:
                 if os.name == "nt":
                     subprocess.run(

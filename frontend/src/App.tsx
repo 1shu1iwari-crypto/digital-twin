@@ -10,8 +10,6 @@ import {
   Badge, Contributions, HeartVisual, Loading, percent, riskClass,
   TrendChart, TwinIndices, ReviewBadge, PrintableSummary
 } from './components'
-import CareWorkspace from './CareWorkspace'
-import WearableImport from './WearableImport'
 
 async function api<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
   const response = await fetch(`/api${path}`, {
@@ -1140,26 +1138,7 @@ export default function App() {
             {/* CONNECTIONS                                     */}
             {/* ════════════════════════════════════════════════ */}
             {route === 'connections' && (
-              <div className="connections-stack">
-                <CareWorkspace
-                  patients={patients}
-                  patientId={selected}
-                  onSaved={loadPopulation}
-                  onPatientOpen={focus}
-                />
-
-                <details className="integration-guide">
-                  <summary>Developer import and device integration</summary>
-                  <WearableImport
-                    key={selected}
-                    patientId={selected}
-                    patients={patients}
-                    onPatientChange={setSelected}
-                    onSaved={loadPopulation}
-                  />
-                </details>
-
-                <div className="connections-grid">
+              <div className="connections-grid">
                 <div className="card">
                   <div className="card-header">
                     <div>
@@ -1242,7 +1221,6 @@ export default function App() {
                       </div>
                     )}
                   </div>
-                </div>
                 </div>
               </div>
             )}
@@ -1550,17 +1528,14 @@ export default function App() {
       {/* ── Mobile bottom nav ─────────────────────────── */}
       <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
         {[
-          { key: 'overview', label: 'Overview', accessibleLabel: 'Overview', icon: <Users size={20} /> },
-          { key: 'patients', label: 'Patients', accessibleLabel: 'Patient Twin', icon: <Activity size={20} /> },
-          { key: 'connections', label: 'Devices', accessibleLabel: 'Device Connections', icon: <Wifi size={20} /> },
-          { key: 'evidence', label: 'Evidence', accessibleLabel: 'Model Evidence', icon: <FlaskConical size={20} /> },
-          { key: 'research', label: 'Research', accessibleLabel: 'Research', icon: <Info size={20} /> },
+          { key: 'overview', label: 'Overview', icon: <Users size={20} /> },
+          { key: 'patients', label: 'Patients', icon: <Activity size={20} /> },
+          { key: 'connections', label: 'Devices', icon: <Wifi size={20} /> },
+          { key: 'evidence', label: 'Evidence', icon: <FlaskConical size={20} /> },
         ].map(item => (
           <button
             key={item.key}
             className={`mob-nav-item ${route === item.key ? 'active' : ''}`}
-            aria-label={item.accessibleLabel}
-            aria-current={route === item.key ? 'page' : undefined}
             onClick={() => navigateTo(item.key as PageRoute)}
           >
             {item.icon}
